@@ -1,4 +1,5 @@
-import pandas as pd
+import pandas as pd, datetime as dt, numpy as np
+from sklearn.preprocessing import StandardScaler
 pd.set_option('display.max_columns', None)  # Display all columns
 try:
     G3 = pd.read_csv("OnlineRetail.csv", encoding='ISO-8859-1')
@@ -66,6 +67,39 @@ try:
     print("\n................................................................................\n")
     print("Final Data Shape:", G3.shape)
     print("Unique Customers:", G3['CustomerID'].nunique())
+    #Creating a new column 'TotalPrice'
+    G3['TotalPrice'] = G3['Quantity'] * G3['UnitPrice']
+    print("\nFirst 5 rows with 'TotalPrice' column added:")
+    print(G3.head())
+    #RFM construction
+    latest_date = G3['InvoiceDate'].max() + pd.Timedelta(days=1)
+    print(f'Analysis Refference Date: {latest_date}')
+    #Grouping and aggregating
+    G3['TotalSum'] = G3['Quantity'] * G3['UnitPrice']
+    rfm = G3.groupby('CustomerID').agg({
+        'InvoiceDate': lambda x: (latest_date - x.max()).days,#Recency
+        'InvoiceNo': 'count',#Frequency
+        'TotalPrice': 'sum'#Monetary
+    })
+    rfm.rename(columns={
+        'InvoiceDate': 'Recency',
+        'InvoiceNo': 'Frequency',
+        'TotalSum': 'Monetary'
+    }, inplace=True)
+    print("\n RFM Table (first 5 rows):")
+    print(rfm.head())
+    #Handling Skewness with log transformation
+    rfm_log=np.log(rfm+1) #Adding 1 to avoid log(0)
+    print("\n....................................................\n")
+    print("Data transformed to Log scale.")
+    #Scaling the Data
+    scaler = StandardScaler()
+    rfm_scaled = scaler.fit_transform(rfm_log)
+    # Convert back to a DataFrame for easy viewing
+    rfm_scaled_df = pd.DataFrame(rfm_scaled, index=rfm.index, columns=rfm.columns)
+    print(rfm_scaled_df.describe().round(2))
+    print("\n.....................................................\n")
+
 except FileNotFoundError:
     print("Error: 'OnlineRetail.csv' not found. Make sure the file is in the same directory as the script.")
 except Exception as e:
