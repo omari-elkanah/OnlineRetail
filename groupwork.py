@@ -6,22 +6,17 @@ try:
     print("Data loaded successfully:")
     Before=len(G3)
     print("Number of rows before cleaning:", Before)
-    print("\nFirst 5 rows (head):")
-    print(G3.head())
-    print("\nLast 5 rows (tail):")
-    print(G3.tail())
-    print("\nRandom sample:")
-    print(G3.sample(5))
+    #print("\nFirst 5 rows (head):"),print(G3.head()) #print("\nLast 5 rows (tail):"),print(G3.tail()) #print("\nRandom sample:"),print(G3.sample(5))
     print("\n A summary of the dataset:")
     print(G3.info())
     G3['InvoiceDate'] = pd.to_datetime(G3['InvoiceDate']) #STEP1: Date type conversion
-    print("\n Statistical summary of numerical columns:")
+    print("\n First statistical summary of numerical columns:")
     print(G3.describe().round(2))
     print("\n Statistical mode\n")
     mode1=G3.mode()
-    print(mode1)
     #STEP 2: Data Cleaning
-    print("\n\n Checking for unique values:\n",G3.nunique(),"\nChecking for duplicated rows: ", G3.duplicated().sum(),"\n")
+    print("\n\n Checking for unique values:",G3.nunique(),
+          "\nChecking for duplicated rows: ", G3.duplicated().sum(),"\n")
     #Handling missing values
     print(G3.dropna())
     print("\n................................................................................")
@@ -65,12 +60,11 @@ try:
     G3.to_csv('OnlineRetailCleaned.csv', index=False)
     #Shape of the data
     print("\n................................................................................\n")
-    print("Final Data Shape:", G3.shape)
+    #print("Final Data Shape:", G3.shape)
     print("Unique Customers:", G3['CustomerID'].nunique())
     #Creating a new column 'TotalPrice'
     G3['TotalPrice'] = G3['Quantity'] * G3['UnitPrice']
-    print("\nFirst 5 rows with 'TotalPrice' column added:")
-    print(G3.head())
+    #print("\nFirst 5 rows with 'TotalPrice' column added:"),#print(G3.head())
     #RFM construction
     latest_date = G3['InvoiceDate'].max() + pd.Timedelta(days=1)
     print(f'Analysis Refference Date: {latest_date}')
@@ -79,7 +73,7 @@ try:
     rfm = G3.groupby('CustomerID').agg({
         'InvoiceDate': lambda x: (latest_date - x.max()).days,#Recency
         'InvoiceNo': 'count',#Frequency
-        'TotalPrice': 'sum'#Monetary
+        'TotalSum': 'sum'#Monetary
     })
     rfm.rename(columns={
         'InvoiceDate': 'Recency',
@@ -99,6 +93,12 @@ try:
     rfm_scaled_df = pd.DataFrame(rfm_scaled, index=rfm.index, columns=rfm.columns)
     print(rfm_scaled_df.describe().round(2))
     print("\n.....................................................\n")
+    print("\n Columns",G3.columns)
+    print("rfm columns",rfm.columns)
+    # This creates a NEW file with your RFM columns
+    rfm.to_csv('Customer_RFM_Analysis.csv', index=True)
+
+    print("File saved! Look for 'Customer_RFM_Analysis.csv' in your folder.")
 
 except FileNotFoundError:
     print("Error: 'OnlineRetail.csv' not found. Make sure the file is in the same directory as the script.")
